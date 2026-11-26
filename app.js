@@ -10,11 +10,12 @@ const siteFavicon = document.querySelector("#site-favicon");
 const carbonTitle = document.title;
 const carbonFavicon = siteFavicon.href;
 const secretPanel = document.querySelector("#secret-panel");
+const instanceList = document.querySelector("#instance-list");
 const secretPanelStatus = document.querySelector("#secret-panel-status");
-const prankStorageKey = "carbon-prank-settings";
-const prankChannelName = "carbon-prank-sync";
-let prankChannel = null;
-let prankSettings = { bananas: false, wobble: false, bigIcons: false };
+const instanceId = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+const liveInstances = new Map();
+const staleInstanceMs = 30000;
+let instanceChannel = null;
 let games = [];
 let frameLoadTimeout = null;
 
@@ -40,56 +41,70 @@ function decodeBase32(encoded) {
 const secretTrigger = decodeBase32(encodedTrigger);
 let typedKeys = "";
 
-function renderPrankSettings() {
-  document.documentElement.classList.toggle("prank-bananas", prankSettings.bananas);
-  document.documentElement.classList.toggle("prank-wobble", prankSettings.wobble);
-  document.documentElement.classList.toggle("prank-big-icons", prankSettings.bigIcons);
-  document.querySelectorAll(".cover-art").forEach(icon => {
-    if (!("originalArt" in icon.dataset)) icon.dataset.originalArt = icon.textContent;
-    icon.textContent = prankSettings.bananas ? "🍌" : icon.dataset.originalArt;
-  });
-  document.querySelectorAll(".prank-toggle").forEach(button => {
-    const enabled = prankSettings[button.dataset.prank];
-    button.setAttribute("aria-pressed", String(enabled));
-    button.querySelector(".prank-state").textContent = enabled ? "ON" : "OFF";
-  });
-  const active = Object.entries(prankSettings).filter(([, enabled]) => enabled).map(([name]) => ({ bananas: "BANANA MODE", wobble: "WOBBLY CARDS", bigIcons: "BIG HEAD MODE" })[name]);
-  secretPanelStatus.textContent = active.length ? `PRANKS ACTIVE · ${active.join(" + ")}` : "NO PRANKS ACTIVE";
+function currentInstanceStatus() {
+  if (dialog.open) return `Playing ${document.querySelector("#dialog-title").textContent}`;
+  return document.visibilityState === "hidden" ? "Open in a background tab" : "Browsing games";
 }
 
-function setPrankSettings(settings, broadcast = false) {
-  prankSettings = {
-    bananas: settings?.bananas === true,
-    wobble: settings?.wobble === true,
-    bigIcons: settings?.bigIcons === true
-  };
-  renderPrankSettings();
-  if (!broadcast) return;
-  try { localStorage.setItem(prankStorageKey, JSON.stringify(prankSettings)); } catch { /* BroadcastChannel still syncs open tabs. */ }
-  prankChannel?.postMessage({ type: "prank-settings", settings: prankSettings });
+function announceInstance(type = "presence") {
+  instanceChannel?.postMessage({ type, id: instanceId, status: currentInstanceStatus(), sentAt: Date.now() });
+}
+
+function renderInstanceList() {
+  const now = Date.now();
+  for (const [id, instance] of liveInstances) {
+    if (now - instance.seenAt > staleInstanceMs) liveInstances.delete(id);
+  }
+  const instances = [
+    { id: instanceId, status: currentInstanceStatus(), current: true },
+    ...Array.from(liveInstances.values()).map(instance => ({ ...instance, current: false }))
+  ];
+  instanceList.innerHTML = instances.map(instance => `
+    <div class="instance-row" role="listitem" ${instance.current ? 'data-current="true"' : ""}>
+      <div class="instance-row-top"><strong>${instance.current ? "THIS TAB" : `CARBON TAB · ${escapeHtml(instance.id.slice(-4).toUpperCase())}`}</strong><span>${instance.current ? "HERE" : "OPEN"}</span></div>
+      <p>${escapeHtml(instance.status)}</p>
+    </div>`).join("");
+  secretPanelStatus.textContent = instanceChannel
+    ? `${instances.length} CARBON TAB${instances.length === 1 ? "" : "S"} FOUND IN THIS BROWSER`
+    : "SHOWING THIS TAB · TAB SCAN UNAVAILABLE";
+}
+
+function scanForInstances() {
+  if (!instanceChannel) {
+    renderInstanceList();
+    return;
+  }
+  secretPanelStatus.textContent = "SCANNING FOR OPEN TABS…";
+  announceInstance("discover");
+  renderInstanceList();
+  setTimeout(() => { if (secretPanel.open) renderInstanceList(); }, 1200);
 }
 
 try {
-  prankChannel = new BroadcastChannel(prankChannelName);
-  prankChannel.addEventListener("message", event => {
-    if (event.data?.type === "prank-settings") setPrankSettings(event.data.settings);
+  instanceChannel = new BroadcastChannel("carbon-instance-scan");
+  instanceChannel.addEventListener("message", event => {
+    const message = event.data;
+    if (!message || message.id === instanceId) return;
+    if (message.type === "discover") {
+      announceInstance();
+      return;
+    }
+    if (message.type === "leave") liveInstances.delete(message.id);
+    else if (message.type === "presence" && typeof message.status === "string") {
+      liveInstances.set(message.id, { id: message.id, status: message.status, seenAt: Date.now() });
+    }
+    if (secretPanel.open) renderInstanceList();
   });
-} catch { /* Storage events provide a fallback where BroadcastChannel is unavailable. */ }
-window.addEventListener("storage", event => {
-  if (event.key !== prankStorageKey) return;
-  try { setPrankSettings(JSON.parse(event.newValue || "{}")); } catch { setPrankSettings({}); }
-});
-try {
-  setPrankSettings(JSON.parse(localStorage.getItem(prankStorageKey) || "{}"));
-  localStorage.removeItem("carbon-neon-surge");
-} catch { setPrankSettings({}); }
-
-document.querySelectorAll(".prank-toggle").forEach(button => {
-  button.addEventListener("click", () => {
-    setPrankSettings({ ...prankSettings, [button.dataset.prank]: !prankSettings[button.dataset.prank] }, true);
-  });
-});
+} catch { /* Tab discovery requires BroadcastChannel support. */ }
+document.addEventListener("visibilitychange", () => announceInstance());
+window.addEventListener("pagehide", () => announceInstance("leave"));
+window.addEventListener("pageshow", () => announceInstance());
+setInterval(() => {
+  announceInstance();
+  if (secretPanel.open) renderInstanceList();
+}, 10000);
 document.querySelector("#close-secret-panel").addEventListener("click", () => secretPanel.close());
+secretPanel.addEventListener("close", () => instanceList.replaceChildren());
 document.addEventListener("keydown", event => {
   if (event.ctrlKey || event.metaKey || event.altKey || dialog.open || secretPanel.open) { typedKeys = ""; return; }
   const target = event.target;
@@ -99,6 +114,7 @@ document.addEventListener("keydown", event => {
   if (typedKeys !== secretTrigger) return;
   typedKeys = "";
   secretPanel.showModal();
+  scanForInstances();
 });
 
 function renderGames() {
@@ -115,7 +131,6 @@ function renderGames() {
         <div class="game-meta"><span>${escapeHtml(game.tag || "READY TO PLAY")}</span><span>✳ &nbsp; BROWSER GAME</span></div></div>
     </article>`).join("");
   emptyState.hidden = visible.length > 0;
-  renderPrankSettings();
 }
 
 function escapeHtml(value) {
@@ -137,6 +152,7 @@ function launchGame(game) {
   frame.src = game.url || "about:blank";
   dialog.showModal();
   document.body.classList.add("dialog-open");
+  announceInstance();
 }
 
 function showFrameError(message) {
@@ -163,7 +179,7 @@ grid.addEventListener("keydown", event => {
 });
 search.addEventListener("input", renderGames);
 document.querySelector("#close-dialog").addEventListener("click", () => dialog.close());
-dialog.addEventListener("close", () => { document.body.classList.remove("dialog-open"); clearTimeout(frameLoadTimeout); frame.src = "about:blank"; });
+dialog.addEventListener("close", () => { document.body.classList.remove("dialog-open"); clearTimeout(frameLoadTimeout); frame.src = "about:blank"; announceInstance(); });
 document.querySelector("#fullscreen-button").addEventListener("click", () => {
   const target = document.querySelector(".game-frame-wrap");
   if (!document.fullscreenElement) target.requestFullscreen?.(); else document.exitFullscreen?.();
