@@ -8,7 +8,6 @@ const keyboard = document.querySelector("#virtual-keyboard");
 const keyboardToggle = document.querySelector("#keyboard-toggle");
 const blankButton = document.querySelector("#blank-button");
 const tabCloakButton = document.querySelector("#tab-cloak-button");
-const selfDestructButton = document.querySelector("#self-destruct-button");
 const siteFavicon = document.querySelector("#site-favicon");
 const carbonTitle = document.title;
 const carbonFavicon = siteFavicon.href;
@@ -103,7 +102,6 @@ blankButton.addEventListener("click", () => {
   blankTab.document.write("<!doctype html>" + pageCopy.outerHTML);
   blankTab.document.close();
 });
-selfDestructButton.addEventListener("click", () => { window.location.assign("https://www.google.com/"); });
 function setTabCloak(enabled) {
   document.title = enabled ? "Google" : carbonTitle;
   siteFavicon.href = enabled ? new URL("google-favicon.svg", document.baseURI).href : carbonFavicon;
