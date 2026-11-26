@@ -265,14 +265,6 @@ document.querySelector("#fullscreen-button").addEventListener("click", () => {
   const target = document.querySelector(".game-frame-wrap");
   if (!document.fullscreenElement) target.requestFullscreen?.(); else document.exitFullscreen?.();
 });
-function updateFullscreenScale() {
-  const active = document.fullscreenElement === document.querySelector(".game-frame-wrap");
-  const scale = active ? Math.min(1, window.innerWidth / 1920, window.innerHeight / 1080) : 1;
-  document.documentElement.style.setProperty("--fullscreen-scale", String(scale));
-}
-document.addEventListener("fullscreenchange", updateFullscreenScale);
-window.addEventListener("resize", updateFullscreenScale);
-
 function startHeadlineTyping() {
   heroRotatingWord.textContent = "";
   heroPrefixCaret.hidden = false;
