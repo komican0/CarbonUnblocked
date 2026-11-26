@@ -5,7 +5,6 @@ const dialog = document.querySelector("#game-dialog");
 const frame = document.querySelector("#game-frame");
 const placeholder = document.querySelector("#frame-placeholder");
 const blankButton = document.querySelector("#blank-button");
-const livePanelButton = document.querySelector("#live-panel-button");
 const tabCloakButton = document.querySelector("#tab-cloak-button");
 const siteFavicon = document.querySelector("#site-favicon");
 const carbonTitle = document.title;
@@ -154,10 +153,6 @@ setInterval(() => {
   if (secretPanel.open) renderInstanceList();
 }, 10000);
 document.querySelector("#close-secret-panel").addEventListener("click", () => secretPanel.close());
-livePanelButton.addEventListener("click", () => {
-  if (!secretPanel.open) secretPanel.showModal();
-  scanForInstances();
-});
 secretPanel.addEventListener("close", () => instanceList.replaceChildren());
 selfDestructAllButton.addEventListener("click", () => {
   selfDestructAllButton.disabled = true;
