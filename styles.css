@@ -41,6 +41,7 @@
 .game-card:hover{transform:translateY(-5px);box-shadow:0 12px 30px rgba(0,0,0,.28)}
 .blank-button{transition:transform .16s ease,border-color .16s ease,background-color .16s ease,box-shadow .16s ease}
 .blank-button:active{transform:scale(.96)}
-.self-destruct-button{display:inline-flex;align-items:center;text-decoration:none;color:#ff8db8;border-color:#5a2942}
+.self-destruct-button{position:fixed;right:16px;bottom:18px;z-index:30;display:inline-flex;align-items:center;min-height:36px;text-decoration:none;color:#ff8db8;border-color:#5a2942;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .self-destruct-button:hover{color:#fff;border-color:var(--pink);background:#321728;box-shadow:0 0 14px rgba(255,101,185,.2)}
+@media(max-width:520px){.self-destruct-button{right:10px;bottom:10px;font-size:8px;padding:9px 10px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
