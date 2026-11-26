@@ -7,6 +7,10 @@ const placeholder = document.querySelector("#frame-placeholder");
 const keyboard = document.querySelector("#virtual-keyboard");
 const keyboardToggle = document.querySelector("#keyboard-toggle");
 const blankButton = document.querySelector("#blank-button");
+const tabCloakButton = document.querySelector("#tab-cloak-button");
+const siteFavicon = document.querySelector("#site-favicon");
+const carbonTitle = document.title;
+const carbonFavicon = siteFavicon.href;
 let games = [];
 let activeGame = null;
 const keyboardRows = [
@@ -98,6 +102,17 @@ blankButton.addEventListener("click", () => {
   blankTab.document.write("<!doctype html>" + pageCopy.outerHTML);
   blankTab.document.close();
 });
+function setTabCloak(enabled) {
+  document.title = enabled ? "Google" : carbonTitle;
+  siteFavicon.href = enabled ? new URL("google-favicon.svg", document.baseURI).href : carbonFavicon;
+  tabCloakButton.setAttribute("aria-pressed", String(enabled));
+  tabCloakButton.title = enabled ? "Restore Carbon tab title and icon" : "Disguise this tab as Google";
+  try { localStorage.setItem("carbon-tab-cloak", String(enabled)); } catch { /* Storage may be disabled. */ }
+}
+tabCloakButton.addEventListener("click", () => {
+  setTabCloak(tabCloakButton.getAttribute("aria-pressed") !== "true");
+});
+try { setTabCloak(localStorage.getItem("carbon-tab-cloak") === "true"); } catch { setTabCloak(false); }
 keyboardToggle.addEventListener("click", () => {
   keyboard.hidden = !keyboard.hidden;
   keyboardToggle.setAttribute("aria-expanded", String(!keyboard.hidden));

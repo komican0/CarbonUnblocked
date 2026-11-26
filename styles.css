@@ -22,4 +22,5 @@
 
 .blank-button{border:1px solid var(--line);border-radius:3px;color:var(--lime);background:#11141f;padding:8px 9px;font:9px var(--mono);letter-spacing:.4px;cursor:pointer;white-space:nowrap}
 .blank-button:hover{border-color:var(--lime);background:#1a2030}
+#tab-cloak-button[aria-pressed="true"]{color:#fff;background:#1a2030;border-color:var(--pink);box-shadow:0 0 12px rgba(255,101,185,.25)}
 @media(max-width:520px){.topbar-right{gap:5px}.blank-button{font-size:7px;letter-spacing:0;padding:6px 5px}}
