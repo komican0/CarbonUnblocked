@@ -16,7 +16,7 @@
   <header class="topbar">
     <a class="brand" href="#home" aria-label="Carbon home"><span class="brand-mark">C</span><span class="brand-name">CARBON</span></a>
     <label class="top-search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find a game…" aria-label="Search games"></label>
-    <div class="topbar-right"><button id="blank-button" class="blank-button" type="button">ABOUT:BLANK</button><button id="tab-cloak-button" class="blank-button tab-cloak-button" type="button" aria-pressed="false" title="Disguise this tab as Google">TAB CLOAK</button><span id="clock" class="clock">12:00 AM</span></div>
+    <div class="topbar-right"><button id="live-panel-button" class="blank-button" type="button" aria-label="Open live visitor panel">LIVE</button><button id="blank-button" class="blank-button" type="button">ABOUT:BLANK</button><button id="tab-cloak-button" class="blank-button tab-cloak-button" type="button" aria-pressed="false" title="Disguise this tab as Google">TAB CLOAK</button><span id="clock" class="clock">12:00 AM</span></div>
   </header>
   <a id="self-destruct-button" class="blank-button self-destruct-button" href="https://www.google.com/" title="Leave Carbon and open Google">SELF-DESTRUCT</a>
 
@@ -38,12 +38,13 @@
 
   <dialog id="game-dialog" class="game-dialog" aria-labelledby="dialog-title"><div class="dialog-bar"><div class="dialog-game-name"><span class="live-indicator"></span><span id="dialog-title">GAME</span></div><div class="dialog-actions"><button id="fullscreen-button" class="icon-button" aria-label="Toggle fullscreen" title="Fullscreen">⛶</button><button id="close-dialog" class="icon-button close-button" aria-label="Close game" title="Close">×</button></div></div><div class="game-frame-wrap"><iframe id="game-frame" title="Selected game" allow="fullscreen; autoplay; gamepad" loading="lazy"></iframe><div id="frame-placeholder" class="frame-placeholder"><span class="placeholder-icon">✳</span><strong id="frame-message-title">Oops, nothing to see here</strong><span id="frame-error-detail">This game doesn't have a playable address yet.</span></div><a class="blank-button self-destruct-button game-self-destruct-button" href="https://www.google.com/" title="Leave Carbon and open Google">SELF-DESTRUCT</a></div><div class="dialog-footer"><span id="game-hint">USE YOUR KEYBOARD TO PLAY</span></div></dialog>
   <dialog id="secret-panel" class="secret-panel" aria-labelledby="secret-panel-title">
-    <div class="secret-panel-header"><div><span class="secret-panel-kicker">CARBON // INSTANCE SCAN</span><h2 id="secret-panel-title">Open Carbon tabs</h2></div><button id="close-secret-panel" class="icon-button close-button" type="button" aria-label="Close open tabs panel">×</button></div>
-    <p class="secret-panel-copy">There are <strong id="instance-count">1</strong> Carbon tabs open in this browser profile.</p>
-    <div id="instance-list" class="instance-list" role="list" aria-label="Open Carbon tabs"></div>
+    <div class="secret-panel-header"><div><span class="secret-panel-kicker">CARBON // LIVE PRESENCE</span><h2 id="secret-panel-title">Carbon online</h2></div><button id="close-secret-panel" class="icon-button close-button" type="button" aria-label="Close open tabs panel">×</button></div>
+    <p class="secret-panel-copy"><strong id="instance-count">1</strong> <span id="instance-count-label">Carbon tabs open here</span>.</p>
+    <div id="instance-list" class="instance-list" role="list" aria-label="Carbon tabs in this browser"></div>
     <button id="self-destruct-all" class="self-destruct-all" type="button">SELF-DESTRUCT ALL OPEN TABS</button>
     <p id="secret-panel-status" class="secret-panel-status" role="status" aria-live="polite">SCANNING FOR OPEN TABS…</p>
   </dialog>
+  <script src="realtime-config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

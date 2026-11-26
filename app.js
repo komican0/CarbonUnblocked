@@ -5,6 +5,7 @@ const dialog = document.querySelector("#game-dialog");
 const frame = document.querySelector("#game-frame");
 const placeholder = document.querySelector("#frame-placeholder");
 const blankButton = document.querySelector("#blank-button");
+const livePanelButton = document.querySelector("#live-panel-button");
 const tabCloakButton = document.querySelector("#tab-cloak-button");
 const siteFavicon = document.querySelector("#site-favicon");
 const carbonTitle = document.title;
@@ -12,40 +13,25 @@ const carbonFavicon = siteFavicon.href;
 const secretPanel = document.querySelector("#secret-panel");
 const instanceList = document.querySelector("#instance-list");
 const instanceCount = document.querySelector("#instance-count");
+const instanceCountLabel = document.querySelector("#instance-count-label");
 const secretPanelStatus = document.querySelector("#secret-panel-status");
 const selfDestructAllButton = document.querySelector("#self-destruct-all");
 const heroRotatingWord = document.querySelector("#hero-rotating-word");
 const heroPrefixCaret = document.querySelector("#hero-prefix-caret");
 const heroWordCaret = document.querySelector("#hero-word-caret");
+const realtimeConfig = window.CARBON_REALTIME || {};
+const realtimeUrl = typeof realtimeConfig.url === "string" ? realtimeConfig.url.trim() : "";
 const instanceId = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const liveInstances = new Map();
 const staleInstanceMs = 30000;
 let instanceChannel = null;
+let realtimeSocket = null;
+let globalVisitorCount = null;
+let realtimeRetryTimer = null;
+let realtimeHeartbeat = null;
 let games = [];
 let frameLoadTimeout = null;
 let dialogCloseTimer = null;
-
-const encodedTrigger = "PJ4HQ6D2PB5HQ===";
-function decodeBase32(encoded) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  let buffer = 0;
-  let bits = 0;
-  let decoded = "";
-  for (const character of encoded.replace(/=+$/, "")) {
-    const value = alphabet.indexOf(character);
-    if (value < 0) throw new Error("Invalid Base32 trigger.");
-    buffer = (buffer << 5) | value;
-    bits += 5;
-    if (bits >= 8) {
-      bits -= 8;
-      decoded += String.fromCharCode((buffer >> bits) & 255);
-      buffer &= (1 << bits) - 1;
-    }
-  }
-  return decoded;
-}
-const secretTrigger = decodeBase32(encodedTrigger);
-let typedKeys = "";
 
 function currentInstanceStatus() {
   if (dialog.open) return `Playing ${document.querySelector("#dialog-title").textContent}`;
@@ -70,11 +56,64 @@ function renderInstanceList() {
       <div class="instance-row-top"><strong>${instance.current ? "THIS TAB" : `CARBON TAB · ${escapeHtml(instance.id.slice(-4).toUpperCase())}`}</strong><span>${instance.current ? "HERE" : "OPEN"}</span></div>
       <p>${escapeHtml(instance.status)}</p>
     </div>`).join("");
-  instanceCount.textContent = String(instances.length);
-  secretPanelStatus.textContent = instanceChannel
+  instanceCount.textContent = String(globalVisitorCount ?? instances.length);
+  instanceCountLabel.textContent = globalVisitorCount !== null
+    ? "active visitors online"
+    : "Carbon tabs open in this browser";
+  secretPanelStatus.textContent = globalVisitorCount !== null
+    ? "ACTIVE VISITORS ONLINE ACROSS CARBON"
+    : instanceChannel
     ? `${instances.length} CARBON TAB${instances.length === 1 ? "" : "S"} FOUND IN THIS BROWSER`
-    : "SHOWING THIS TAB · TAB SCAN UNAVAILABLE";
+    : "SHOWING THIS TAB · LOCAL SCAN UNAVAILABLE";
 }
+
+function connectRealtime() {
+  if (!realtimeUrl || !/^https?:\/\//i.test(realtimeUrl) || !("WebSocket" in window)) return;
+  let visitorId;
+  try {
+    visitorId = localStorage.getItem("carbon-visitor-id");
+    if (!visitorId) {
+      visitorId = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem("carbon-visitor-id", visitorId);
+    }
+  } catch {
+    visitorId = instanceId;
+  }
+  const endpoint = new URL("presence", realtimeUrl.endsWith("/") ? realtimeUrl : `${realtimeUrl}/`);
+  endpoint.protocol = endpoint.protocol === "https:" ? "wss:" : "ws:";
+  endpoint.searchParams.set("visitor", visitorId);
+  try { realtimeSocket = new WebSocket(endpoint); }
+  catch {
+    globalVisitorCount = null;
+    realtimeRetryTimer = setTimeout(connectRealtime, 10000);
+    return;
+  }
+  realtimeSocket.addEventListener("open", () => {
+    clearInterval(realtimeHeartbeat);
+    realtimeHeartbeat = setInterval(() => {
+      if (realtimeSocket?.readyState === WebSocket.OPEN) realtimeSocket.send("ping");
+    }, 25000);
+  });
+  realtimeSocket.addEventListener("message", event => {
+    try {
+      const message = JSON.parse(event.data);
+      if (message.type === "count" && Number.isFinite(message.count)) {
+        globalVisitorCount = message.count;
+        if (secretPanel.open) renderInstanceList();
+      }
+      if (message.type === "self-destruct-all") window.location.assign("https://www.google.com/");
+    } catch { /* Ignore malformed realtime messages. */ }
+  });
+  realtimeSocket.addEventListener("close", () => {
+    clearInterval(realtimeHeartbeat);
+    realtimeSocket = null;
+    globalVisitorCount = null;
+    if (secretPanel.open) renderInstanceList();
+    clearTimeout(realtimeRetryTimer);
+    realtimeRetryTimer = setTimeout(connectRealtime, 5000);
+  });
+}
+connectRealtime();
 
 function scanForInstances() {
   if (!instanceChannel) {
@@ -115,25 +154,38 @@ setInterval(() => {
   if (secretPanel.open) renderInstanceList();
 }, 10000);
 document.querySelector("#close-secret-panel").addEventListener("click", () => secretPanel.close());
+livePanelButton.addEventListener("click", () => {
+  if (!secretPanel.open) secretPanel.showModal();
+  scanForInstances();
+});
 secretPanel.addEventListener("close", () => instanceList.replaceChildren());
 selfDestructAllButton.addEventListener("click", () => {
   selfDestructAllButton.disabled = true;
-  secretPanelStatus.textContent = "SELF-DESTRUCTING ALL RESPONDING TABS…";
-  instanceChannel?.postMessage({ type: "self-destruct-all", id: instanceId });
-  setTimeout(() => window.location.assign("https://www.google.com/"), 300);
+  if (!realtimeUrl) {
+    secretPanelStatus.textContent = "SELF-DESTRUCTING CARBON TABS IN THIS BROWSER…";
+    instanceChannel?.postMessage({ type: "self-destruct-all", id: instanceId });
+    setTimeout(() => window.location.assign("https://www.google.com/"), 300);
+    return;
+  }
+  const adminToken = window.prompt("Enter the Carbon admin token to self-destruct every connected Carbon tab:");
+  if (!adminToken) {
+    selfDestructAllButton.disabled = false;
+    secretPanelStatus.textContent = "GLOBAL SELF-DESTRUCT CANCELLED";
+    return;
+  }
+  const endpoint = new URL("self-destruct", realtimeUrl.endsWith("/") ? realtimeUrl : `${realtimeUrl}/`);
+  fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: adminToken }) })
+    .then(response => {
+      if (!response.ok) throw new Error(response.status === 401 ? "Admin token was rejected." : "Backend request failed.");
+      secretPanelStatus.textContent = "SELF-DESTRUCT SENT TO ALL CONNECTED VISITORS";
+      instanceChannel?.postMessage({ type: "self-destruct-all", id: instanceId });
+      setTimeout(() => window.location.assign("https://www.google.com/"), 300);
+    })
+    .catch(error => {
+      secretPanelStatus.textContent = error.message;
+      selfDestructAllButton.disabled = false;
+    });
 });
-document.addEventListener("keydown", event => {
-  if (event.ctrlKey || event.metaKey || event.altKey || dialog.open || secretPanel.open) { typedKeys = ""; return; }
-  const target = event.target;
-  if (!(target instanceof Element) || target.isContentEditable || target.matches("input, textarea, select")) { typedKeys = ""; return; }
-  if (event.key.length !== 1) return;
-  typedKeys = (typedKeys + event.key.toLowerCase()).slice(-secretTrigger.length);
-  if (typedKeys !== secretTrigger) return;
-  typedKeys = "";
-  secretPanel.showModal();
-  scanForInstances();
-});
-
 function renderGames() {
   const query = search.value.trim().toLowerCase();
   const visible = games.filter(game => game.title.toLowerCase().includes(query));
@@ -222,12 +274,6 @@ document.addEventListener("fullscreenchange", updateFullscreenScale);
 window.addEventListener("resize", updateFullscreenScale);
 
 function startHeadlineTyping() {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    heroRotatingWord.textContent = "round.";
-    heroPrefixCaret.hidden = true;
-    heroWordCaret.hidden = true;
-    return;
-  }
   heroRotatingWord.textContent = "";
   heroPrefixCaret.hidden = false;
   heroWordCaret.hidden = true;

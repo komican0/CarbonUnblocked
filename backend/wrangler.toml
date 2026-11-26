@@ -1,0 +1,11 @@
+name = "carbon-realtime"
+main = "worker.js"
+compatibility_date = "2025-11-01"
+
+[[durable_objects.bindings]]
+name = "CARBON_ROOM"
+class_name = "CarbonRoom"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["CarbonRoom"]
