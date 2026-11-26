@@ -10,10 +10,11 @@ const siteFavicon = document.querySelector("#site-favicon");
 const carbonTitle = document.title;
 const carbonFavicon = siteFavicon.href;
 const secretPanel = document.querySelector("#secret-panel");
-const neonSurgeToggle = document.querySelector("#neon-surge-toggle");
 const secretPanelStatus = document.querySelector("#secret-panel-status");
-const surgeStorageKey = "carbon-neon-surge";
-let surgeChannel = null;
+const prankStorageKey = "carbon-prank-settings";
+const prankChannelName = "carbon-prank-sync";
+let prankChannel = null;
+let prankSettings = { bananas: false, wobble: false, bigIcons: false };
 let games = [];
 let frameLoadTimeout = null;
 
@@ -39,29 +40,54 @@ function decodeBase32(encoded) {
 const secretTrigger = decodeBase32(encodedTrigger);
 let typedKeys = "";
 
-function applyNeonSurge(enabled, broadcast = false) {
-  document.documentElement.classList.toggle("carbon-surge", enabled);
-  neonSurgeToggle.setAttribute("aria-pressed", String(enabled));
-  neonSurgeToggle.querySelector(".surge-state").textContent = enabled ? "ON" : "OFF";
-  secretPanelStatus.textContent = enabled ? "NEON SURGE IS ON · SYNCED TO OPEN TABS" : "NEON SURGE IS OFF";
+function renderPrankSettings() {
+  document.documentElement.classList.toggle("prank-bananas", prankSettings.bananas);
+  document.documentElement.classList.toggle("prank-wobble", prankSettings.wobble);
+  document.documentElement.classList.toggle("prank-big-icons", prankSettings.bigIcons);
+  document.querySelectorAll(".cover-art").forEach(icon => {
+    if (!("originalArt" in icon.dataset)) icon.dataset.originalArt = icon.textContent;
+    icon.textContent = prankSettings.bananas ? "🍌" : icon.dataset.originalArt;
+  });
+  document.querySelectorAll(".prank-toggle").forEach(button => {
+    const enabled = prankSettings[button.dataset.prank];
+    button.setAttribute("aria-pressed", String(enabled));
+    button.querySelector(".prank-state").textContent = enabled ? "ON" : "OFF";
+  });
+  const active = Object.entries(prankSettings).filter(([, enabled]) => enabled).map(([name]) => ({ bananas: "BANANA MODE", wobble: "WOBBLY CARDS", bigIcons: "BIG HEAD MODE" })[name]);
+  secretPanelStatus.textContent = active.length ? `PRANKS ACTIVE · ${active.join(" + ")}` : "NO PRANKS ACTIVE";
+}
+
+function setPrankSettings(settings, broadcast = false) {
+  prankSettings = {
+    bananas: settings?.bananas === true,
+    wobble: settings?.wobble === true,
+    bigIcons: settings?.bigIcons === true
+  };
+  renderPrankSettings();
   if (!broadcast) return;
-  try { localStorage.setItem(surgeStorageKey, String(enabled)); } catch { /* BroadcastChannel still syncs open tabs. */ }
-  surgeChannel?.postMessage({ type: "neon-surge", enabled });
+  try { localStorage.setItem(prankStorageKey, JSON.stringify(prankSettings)); } catch { /* BroadcastChannel still syncs open tabs. */ }
+  prankChannel?.postMessage({ type: "prank-settings", settings: prankSettings });
 }
 
 try {
-  surgeChannel = new BroadcastChannel("carbon-open-tabs");
-  surgeChannel.addEventListener("message", event => {
-    if (event.data?.type === "neon-surge" && typeof event.data.enabled === "boolean") applyNeonSurge(event.data.enabled);
+  prankChannel = new BroadcastChannel(prankChannelName);
+  prankChannel.addEventListener("message", event => {
+    if (event.data?.type === "prank-settings") setPrankSettings(event.data.settings);
   });
 } catch { /* Storage events provide a fallback where BroadcastChannel is unavailable. */ }
 window.addEventListener("storage", event => {
-  if (event.key === surgeStorageKey) applyNeonSurge(event.newValue === "true");
+  if (event.key !== prankStorageKey) return;
+  try { setPrankSettings(JSON.parse(event.newValue || "{}")); } catch { setPrankSettings({}); }
 });
-try { applyNeonSurge(localStorage.getItem(surgeStorageKey) === "true"); } catch { applyNeonSurge(false); }
+try {
+  setPrankSettings(JSON.parse(localStorage.getItem(prankStorageKey) || "{}"));
+  localStorage.removeItem("carbon-neon-surge");
+} catch { setPrankSettings({}); }
 
-neonSurgeToggle.addEventListener("click", () => {
-  applyNeonSurge(neonSurgeToggle.getAttribute("aria-pressed") !== "true", true);
+document.querySelectorAll(".prank-toggle").forEach(button => {
+  button.addEventListener("click", () => {
+    setPrankSettings({ ...prankSettings, [button.dataset.prank]: !prankSettings[button.dataset.prank] }, true);
+  });
 });
 document.querySelector("#close-secret-panel").addEventListener("click", () => secretPanel.close());
 document.addEventListener("keydown", event => {
@@ -89,6 +115,7 @@ function renderGames() {
         <div class="game-meta"><span>${escapeHtml(game.tag || "READY TO PLAY")}</span><span>✳ &nbsp; BROWSER GAME</span></div></div>
     </article>`).join("");
   emptyState.hidden = visible.length > 0;
+  renderPrankSettings();
 }
 
 function escapeHtml(value) {
