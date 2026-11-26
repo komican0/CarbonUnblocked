@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b12">
+  <title>Carbon</title>
+  <link id="site-favicon" rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=popular-tab-3">
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="Carbon home"><span class="brand-mark">C</span><span class="brand-name">CARBON</span></a>
+    <label class="top-search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find a game…" aria-label="Search games"></label>
+    <div class="topbar-right"><button id="blank-button" class="blank-button" type="button">ABOUT:BLANK</button><button id="tab-cloak-button" class="blank-button tab-cloak-button" type="button" aria-pressed="false" title="Disguise this tab as Google">TAB CLOAK</button><span id="clock" class="clock">12:00 AM</span></div>
+  </header>
+  <a id="self-destruct-button" class="blank-button self-destruct-button" href="https://www.google.com/" title="Leave Carbon and open Google">SELF-DESTRUCT</a>
+
+  <main id="home">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy"><div class="eyebrow"><span class="eyebrow-line"></span> YOUR SCHOOL ESCAPE</div><h1 id="hero-title"><span class="hero-prefix">One more<span id="hero-prefix-caret" class="typing-cursor" aria-hidden="true"></span></span><br><span id="hero-rotating-word"></span><span id="hero-word-caret" class="typing-cursor" aria-hidden="true" hidden></span></h1><a class="hero-cta" href="#library">FIND YOUR GAME <span>↘</span></a></div>
+      <div class="hero-art" aria-hidden="true"><div class="art-grid"></div><div class="orbit orbit-outer"></div><div class="orbit orbit-inner"></div><div class="art-spark spark-a">✳</div><div class="art-spark spark-b">✦</div><div class="art-spark spark-c">·</div><div class="arcade-machine"><div class="machine-top"><span></span><span></span><span></span></div><div class="machine-screen"><div class="screen-glow"></div><span class="screen-word">PLAY</span><span class="screen-pixel pixel-one"></span><span class="screen-pixel pixel-two"></span></div><div class="machine-controls"><span class="mini-stick"></span><span class="mini-button button-pink"></span><span class="mini-button button-yellow"></span></div><div class="machine-base"></div></div><div class="hero-sticker"><span>ALL<br>FOR<br>FUN</span><i>✳</i></div><div class="art-caption">CARBON <span>✳</span> OPEN ALL NIGHT</div></div>
+      <div class="hero-index"><span>01</span><span class="index-rule"></span><span>03</span></div>
+    </section>
+
+    <section id="library" class="library" aria-labelledby="library-title">
+      <div class="section-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> THE GAME ROOM</div><h2 id="library-title">Pick your <span>player.</span></h2></div><a class="browse-link" href="#game-grid">BROWSE ALL <span>↘</span></a></div>
+      <div class="game-filters" role="tablist" aria-label="Game collection">
+        <button id="all-games-filter" class="collection-tab active" type="button" role="tab" aria-selected="true">All games <span id="all-game-count">0</span></button>
+        <button id="popular-filter" class="collection-tab" type="button" role="tab" aria-selected="false">Popular <span id="popular-game-count">0</span></button>
+      </div>
+      <div id="game-grid" class="game-grid" aria-live="polite"></div>
+      <p id="empty-state" class="empty-state" hidden>No games found. Try another search.</p>
+    </section>
+
+    <footer class="footer"><a class="brand footer-brand" href="#home"><span class="brand-mark">C</span><span class="brand-name">CARBON</span></a><span>A SMALL SITE FOR ALL GAMES</span><span class="footer-right">hi i made this <i>✳</i></span></footer>
+  </main>
+
+  <dialog id="game-dialog" class="game-dialog" aria-labelledby="dialog-title"><div class="dialog-bar"><div class="dialog-game-name"><span class="live-indicator"></span><span id="dialog-title">GAME</span></div><div class="dialog-actions"><button id="fullscreen-button" class="icon-button" aria-label="Toggle fullscreen" title="Fullscreen">⛶</button><button id="close-dialog" class="icon-button close-button" aria-label="Close game" title="Close">×</button></div></div><div class="game-frame-wrap"><iframe id="game-frame" title="Selected game" allow="fullscreen; autoplay; gamepad" loading="lazy"></iframe><div id="frame-placeholder" class="frame-placeholder"><span class="placeholder-icon">✳</span><strong id="frame-message-title">Oops, nothing to see here</strong><span id="frame-error-detail">This game doesn't have a playable address yet.</span></div><a class="blank-button self-destruct-button game-self-destruct-button" href="https://www.google.com/" title="Leave Carbon and open Google">SELF-DESTRUCT</a></div><div class="dialog-footer"><span id="game-hint">USE YOUR KEYBOARD TO PLAY</span></div></dialog>
+  <dialog id="secret-panel" class="secret-panel" aria-labelledby="secret-panel-title">
+    <div class="secret-panel-header"><div><span class="secret-panel-kicker">CARBON // LIVE PRESENCE</span><h2 id="secret-panel-title">Carbon online</h2></div><button id="close-secret-panel" class="icon-button close-button" type="button" aria-label="Close open tabs panel">×</button></div>
+    <p class="secret-panel-copy"><strong id="instance-count">1</strong> <span id="instance-count-label">Carbon tabs open here</span>.</p>
+    <div id="instance-list" class="instance-list" role="list" aria-label="Carbon tabs in this browser"></div>
+    <button id="self-destruct-all" class="self-destruct-all" type="button">SELF-DESTRUCT ALL OPEN TABS</button>
+    <p id="secret-panel-status" class="secret-panel-status" role="status" aria-live="polite">SCANNING FOR OPEN TABS…</p>
+  </dialog>
+  <script src="realtime-config.js?v=20261126-2"></script>
+  <script src="app.js?v=popular-tab-3"></script>
+</body>
+</html>
