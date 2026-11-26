@@ -4,22 +4,13 @@ const search = document.querySelector("#search");
 const dialog = document.querySelector("#game-dialog");
 const frame = document.querySelector("#game-frame");
 const placeholder = document.querySelector("#frame-placeholder");
-const keyboard = document.querySelector("#virtual-keyboard");
-const keyboardToggle = document.querySelector("#keyboard-toggle");
 const blankButton = document.querySelector("#blank-button");
 const tabCloakButton = document.querySelector("#tab-cloak-button");
 const siteFavicon = document.querySelector("#site-favicon");
 const carbonTitle = document.title;
 const carbonFavicon = siteFavicon.href;
 let games = [];
-let activeGame = null;
-const keyboardRows = [
-  [["Escape", "Esc"], ["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"], ["0", "0"], ["-", "-"], ["=", "="], ["Backspace", "⌫", "wide"]],
-  [["Tab", "Tab", "wide"], ..."QWERTYUIOP".split("").map(key => [key.toLowerCase(), key]), ["[", "["], ["]", "]"], ["\\", "\\", "wide"]],
-  [["CapsLock", "Caps", "wide"], ..."ASDFGHJKL".split("").map(key => [key.toLowerCase(), key]), [";", ";"], ["'", "'"], ["Enter", "Enter", "wide"]],
-  [["Shift", "Shift", "wider"], ..."ZXCVBNM".split("").map(key => [key.toLowerCase(), key]), [",", ","], [".", "."], ["/", "/"], ["Shift", "Shift", "wider"]],
-  [["Control", "Ctrl", "wide"], ["Meta", "Win", "wide"], ["Alt", "Alt", "wide"], [" ", "Space", "space"], ["Alt", "Alt", "wide"], ["ContextMenu", "Menu", "wide"], ["Control", "Ctrl", "wide"], ["ArrowLeft", "←", "arrow"], [["ArrowUp", "↑", "arrow"], ["ArrowDown", "↓", "arrow"]], ["ArrowRight", "→", "arrow"]]
-];
+let frameLoadTimeout = null;
 
 function renderGames() {
   const query = search.value.trim().toLowerCase();
@@ -37,31 +28,39 @@ function renderGames() {
   emptyState.hidden = visible.length > 0;
 }
 
-document.querySelector("#virtual-keyboard").innerHTML = keyboardRows.map(row =>
-  `<div class="key-row">${row.map(key => Array.isArray(key[0])
-    ? `<span class="arrow-cluster">${key.map(item => virtualKey(item)).join("")}</span>`
-    : virtualKey(key)).join("")}</div>`).join("") + `<p>HOLD KEYS FOR MOVEMENT · SAME-ORIGIN GAMES WORK BEST</p>`;
-
-function virtualKey([key, label, size = ""]) {
-  const safeKey = key === " " ? "Space" : key;
-  return `<button class="virtual-key ${size}" data-key="${escapeHtml(safeKey)}" aria-label="${escapeHtml(label === "Space" ? "Space" : label)}">${escapeHtml(label)}</button>`;
-}
-
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
 
 function launchGame(game) {
-  activeGame = game;
+  clearTimeout(frameLoadTimeout);
   document.querySelector("#dialog-title").textContent = game.title.toUpperCase();
   document.querySelector("#game-hint").textContent = game.controls || "USE YOUR KEYBOARD TO PLAY";
-  placeholder.classList.toggle("visible", !game.url);
+  if (game.url) {
+    document.querySelector("#frame-message-title").textContent = "Loading game…";
+    document.querySelector("#frame-error-detail").textContent = "Waiting for the game to respond.";
+    placeholder.classList.add("visible");
+    frameLoadTimeout = setTimeout(() => showFrameError("The game did not respond in time. It may be offline or block embedding."), 15000);
+  } else {
+    showFrameError("No game URL is configured for this title.");
+  }
   frame.src = game.url || "about:blank";
-  keyboard.hidden = true;
-  keyboardToggle.setAttribute("aria-expanded", "false");
   dialog.showModal();
   document.body.classList.add("dialog-open");
 }
+
+function showFrameError(message) {
+  clearTimeout(frameLoadTimeout);
+  document.querySelector("#frame-message-title").textContent = "Oops, nothing to see here";
+  document.querySelector("#frame-error-detail").textContent = message;
+  placeholder.classList.add("visible");
+}
+
+frame.addEventListener("load", () => {
+  clearTimeout(frameLoadTimeout);
+  if (frame.src !== "about:blank") placeholder.classList.remove("visible");
+});
+frame.addEventListener("error", () => showFrameError("The game frame reported a loading error."));
 
 grid.addEventListener("click", event => {
   const card = event.target.closest("[data-game-id]");
@@ -74,7 +73,7 @@ grid.addEventListener("keydown", event => {
 });
 search.addEventListener("input", renderGames);
 document.querySelector("#close-dialog").addEventListener("click", () => dialog.close());
-dialog.addEventListener("close", () => { document.body.classList.remove("dialog-open"); frame.src = "about:blank"; activeGame = null; });
+dialog.addEventListener("close", () => { document.body.classList.remove("dialog-open"); clearTimeout(frameLoadTimeout); frame.src = "about:blank"; });
 document.querySelector("#fullscreen-button").addEventListener("click", () => {
   const target = document.querySelector(".game-frame-wrap");
   if (!document.fullscreenElement) target.requestFullscreen?.(); else document.exitFullscreen?.();
@@ -113,30 +112,6 @@ tabCloakButton.addEventListener("click", () => {
   setTabCloak(tabCloakButton.getAttribute("aria-pressed") !== "true");
 });
 try { setTabCloak(localStorage.getItem("carbon-tab-cloak") === "true"); } catch { setTabCloak(false); }
-keyboardToggle.addEventListener("click", () => {
-  keyboard.hidden = !keyboard.hidden;
-  keyboardToggle.setAttribute("aria-expanded", String(!keyboard.hidden));
-});
-
-function sendVirtualKey(button, type) {
-  if (!activeGame?.url) return;
-  const key = button.dataset.key;
-  const code = key === "Space" ? "Space" : key.length === 1 ? `Key${key.toUpperCase()}` : key;
-  try {
-    frame.contentWindow.focus();
-    const event = new KeyboardEvent(type, { key: key === "Space" ? " " : key, code, bubbles: true, cancelable: true });
-    frame.contentWindow.dispatchEvent(event);
-    frame.contentDocument?.dispatchEvent(new KeyboardEvent(type, { key: key === "Space" ? " " : key, code, bubbles: true, cancelable: true }));
-  } catch { /* Cross-origin game frames cannot receive script generated key events. */ }
-}
-document.querySelectorAll(".virtual-key").forEach(button => {
-  button.addEventListener("pointerdown", event => { event.preventDefault(); button.classList.add("pressed"); sendVirtualKey(button, "keydown"); });
-  ["pointerup", "pointercancel", "pointerleave"].forEach(type => button.addEventListener(type, () => {
-    if (button.classList.contains("pressed")) sendVirtualKey(button, "keyup");
-    button.classList.remove("pressed");
-  }));
-});
-
 function tickClock() {
   const now = new Date();
   document.querySelector("#clock").textContent = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
