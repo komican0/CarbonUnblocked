@@ -11,13 +11,19 @@ const carbonTitle = document.title;
 const carbonFavicon = siteFavicon.href;
 const secretPanel = document.querySelector("#secret-panel");
 const instanceList = document.querySelector("#instance-list");
+const instanceCount = document.querySelector("#instance-count");
 const secretPanelStatus = document.querySelector("#secret-panel-status");
+const selfDestructAllButton = document.querySelector("#self-destruct-all");
+const heroRotatingWord = document.querySelector("#hero-rotating-word");
+const heroPrefixCaret = document.querySelector("#hero-prefix-caret");
+const heroWordCaret = document.querySelector("#hero-word-caret");
 const instanceId = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const liveInstances = new Map();
 const staleInstanceMs = 30000;
 let instanceChannel = null;
 let games = [];
 let frameLoadTimeout = null;
+let dialogCloseTimer = null;
 
 const encodedTrigger = "PJ4HQ6D2PB5HQ===";
 function decodeBase32(encoded) {
@@ -64,6 +70,7 @@ function renderInstanceList() {
       <div class="instance-row-top"><strong>${instance.current ? "THIS TAB" : `CARBON TAB · ${escapeHtml(instance.id.slice(-4).toUpperCase())}`}</strong><span>${instance.current ? "HERE" : "OPEN"}</span></div>
       <p>${escapeHtml(instance.status)}</p>
     </div>`).join("");
+  instanceCount.textContent = String(instances.length);
   secretPanelStatus.textContent = instanceChannel
     ? `${instances.length} CARBON TAB${instances.length === 1 ? "" : "S"} FOUND IN THIS BROWSER`
     : "SHOWING THIS TAB · TAB SCAN UNAVAILABLE";
@@ -85,6 +92,10 @@ try {
   instanceChannel.addEventListener("message", event => {
     const message = event.data;
     if (!message || message.id === instanceId) return;
+    if (message.type === "self-destruct-all") {
+      window.location.assign("https://www.google.com/");
+      return;
+    }
     if (message.type === "discover") {
       announceInstance();
       return;
@@ -105,6 +116,12 @@ setInterval(() => {
 }, 10000);
 document.querySelector("#close-secret-panel").addEventListener("click", () => secretPanel.close());
 secretPanel.addEventListener("close", () => instanceList.replaceChildren());
+selfDestructAllButton.addEventListener("click", () => {
+  selfDestructAllButton.disabled = true;
+  secretPanelStatus.textContent = "SELF-DESTRUCTING ALL RESPONDING TABS…";
+  instanceChannel?.postMessage({ type: "self-destruct-all", id: instanceId });
+  setTimeout(() => window.location.assign("https://www.google.com/"), 300);
+});
 document.addEventListener("keydown", event => {
   if (event.ctrlKey || event.metaKey || event.altKey || dialog.open || secretPanel.open) { typedKeys = ""; return; }
   const target = event.target;
@@ -178,8 +195,20 @@ grid.addEventListener("keydown", event => {
   if (card) { event.preventDefault(); launchGame(games.find(game => game.id === card.dataset.gameId)); }
 });
 search.addEventListener("input", renderGames);
-document.querySelector("#close-dialog").addEventListener("click", () => dialog.close());
-dialog.addEventListener("close", () => { document.body.classList.remove("dialog-open"); clearTimeout(frameLoadTimeout); frame.src = "about:blank"; announceInstance(); });
+function closeGameDialog() {
+  if (!dialog.open || dialog.classList.contains("closing")) return;
+  dialog.classList.add("closing");
+  clearTimeout(dialogCloseTimer);
+  dialogCloseTimer = setTimeout(() => dialog.close(), 240);
+}
+document.querySelector("#close-dialog").addEventListener("click", closeGameDialog);
+dialog.addEventListener("cancel", event => { event.preventDefault(); closeGameDialog(); });
+dialog.addEventListener("animationend", event => {
+  if (event.target !== dialog || event.animationName !== "carbon-dialog-out") return;
+  clearTimeout(dialogCloseTimer);
+  dialog.close();
+});
+dialog.addEventListener("close", () => { dialog.classList.remove("closing"); document.body.classList.remove("dialog-open"); clearTimeout(frameLoadTimeout); clearTimeout(dialogCloseTimer); frame.src = "about:blank"; announceInstance(); });
 document.querySelector("#fullscreen-button").addEventListener("click", () => {
   const target = document.querySelector(".game-frame-wrap");
   if (!document.fullscreenElement) target.requestFullscreen?.(); else document.exitFullscreen?.();
@@ -191,6 +220,43 @@ function updateFullscreenScale() {
 }
 document.addEventListener("fullscreenchange", updateFullscreenScale);
 window.addEventListener("resize", updateFullscreenScale);
+
+function startHeadlineTyping() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    heroRotatingWord.textContent = "round.";
+    heroPrefixCaret.hidden = true;
+    heroWordCaret.hidden = true;
+    return;
+  }
+  heroRotatingWord.textContent = "";
+  heroPrefixCaret.hidden = false;
+  heroWordCaret.hidden = true;
+  const pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+  (async () => {
+    const words = ["round.", "game.", "module."];
+    await pause(650);
+    while (true) {
+      for (const word of words) {
+        heroPrefixCaret.hidden = true;
+        heroWordCaret.hidden = false;
+        for (const character of word) {
+          heroRotatingWord.textContent += character;
+          await pause(115);
+        }
+        await pause(1250);
+        while (heroRotatingWord.textContent.length) {
+          heroRotatingWord.textContent = heroRotatingWord.textContent.slice(0, -1);
+          await pause(85);
+        }
+        heroWordCaret.hidden = true;
+        heroPrefixCaret.hidden = false;
+        await pause(250);
+      }
+    }
+  })();
+}
+startHeadlineTyping();
+
 blankButton.addEventListener("click", () => {
   const blankTab = window.open("about:blank", "_blank");
   if (!blankTab) return;
