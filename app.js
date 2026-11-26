@@ -188,7 +188,11 @@ selfDestructAllButton.addEventListener("click", () => {
 });
 function renderGames() {
   const query = search.value.trim().toLowerCase();
-  const visible = games.filter(game => game.title.toLowerCase().includes(query));
+  const orderedGames = [...games].sort((a, b) => {
+    const pinOrder = (a.pinOrder ?? Number.POSITIVE_INFINITY) - (b.pinOrder ?? Number.POSITIVE_INFINITY);
+    return pinOrder || a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" });
+  });
+  const visible = orderedGames.filter(game => game.title.toLowerCase().includes(query));
   grid.innerHTML = visible.map((game, index) => `
     <article class="game-card" tabindex="0" role="button" data-game-id="${escapeHtml(game.id)}" aria-label="Play ${escapeHtml(game.title)}">
       <div class="game-cover" style="--cover-glow:${escapeHtml(game.glow || game.color || "#d7ff5f")};--cover-card:${escapeHtml(game.color || "#d7ff5f")}">
@@ -329,6 +333,6 @@ function tickClock() {
 tickClock();
 setInterval(tickClock, 30000);
 
-fetch("games.json").then(response => { if (!response.ok) throw new Error("Could not load games.json"); return response.json(); })
+fetch("games.json?v=20261126-sequels").then(response => { if (!response.ok) throw new Error("Could not load games.json"); return response.json(); })
   .then(data => { games = Array.isArray(data) ? data.filter(game => game && game.id && game.title) : []; renderGames(); })
   .catch(() => { grid.innerHTML = ""; emptyState.hidden = false; emptyState.textContent = "Couldn't load the game library. Check that games.json is available."; });
