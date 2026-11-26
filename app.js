@@ -29,6 +29,7 @@ let globalVisitorCount = null;
 let realtimeRetryTimer = null;
 let realtimeHeartbeat = null;
 let games = [];
+let activeGameFilter = "all";
 let frameLoadTimeout = null;
 let dialogCloseTimer = null;
 
@@ -183,14 +184,19 @@ selfDestructAllButton.addEventListener("click", () => {
 });
 function renderGames() {
   const query = search.value.trim().toLowerCase();
+  document.querySelector("#all-game-count").textContent = String(games.length);
+  document.querySelector("#popular-game-count").textContent = String(games.filter(game => game.pinOrder != null).length);
   const orderedGames = [...games].sort((a, b) => {
     const pinOrder = (a.pinOrder ?? Number.POSITIVE_INFINITY) - (b.pinOrder ?? Number.POSITIVE_INFINITY);
     return pinOrder || a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" });
   });
-  const visible = orderedGames.filter(game => game.title.toLowerCase().includes(query));
+  const visible = orderedGames.filter(game =>
+    (activeGameFilter !== "popular" || game.pinOrder != null) && game.title.toLowerCase().includes(query)
+  );
   grid.innerHTML = visible.map((game, index) => `
     <article class="game-card" tabindex="0" role="button" data-game-id="${escapeHtml(game.id)}" aria-label="Play ${escapeHtml(game.title)}">
       <div class="game-cover" style="--cover-glow:${escapeHtml(game.glow || game.color || "#d7ff5f")};--cover-card:${escapeHtml(game.color || "#d7ff5f")}">
+        ${game.pinOrder != null ? '<span class="popular-badge">POPULAR</span>' : ""}
         <span class="cover-tag">${escapeHtml(game.tag || game.title.toUpperCase())}</span>
         <span class="cover-art" aria-hidden="true">${escapeHtml(game.icon || "✳")}</span>
         <span class="cover-spot">${String(index + 1).padStart(2, "0")} / ${String(games.length).padStart(2, "0")}</span>
@@ -199,6 +205,18 @@ function renderGames() {
         <div class="game-meta"><span>${escapeHtml(game.tag || "READY TO PLAY")}</span><span>✳ &nbsp; BROWSER GAME</span></div></div>
     </article>`).join("");
   emptyState.hidden = visible.length > 0;
+}
+
+for (const [filter, button] of [["all", document.querySelector("#all-games-filter")], ["popular", document.querySelector("#popular-filter")]]) {
+  button.addEventListener("click", () => {
+    activeGameFilter = filter;
+    document.querySelectorAll(".collection-tab").forEach(tab => {
+      const selected = tab === button;
+      tab.classList.toggle("active", selected);
+      tab.setAttribute("aria-selected", String(selected));
+    });
+    renderGames();
+  });
 }
 
 function escapeHtml(value) {
@@ -328,6 +346,6 @@ function tickClock() {
 tickClock();
 setInterval(tickClock, 30000);
 
-fetch("games.json?v=20261126-sequels").then(response => { if (!response.ok) throw new Error("Could not load games.json"); return response.json(); })
+fetch("games.json?v=alphabetical-3").then(response => { if (!response.ok) throw new Error("Could not load games.json"); return response.json(); })
   .then(data => { games = Array.isArray(data) ? data.filter(game => game && game.id && game.title) : []; renderGames(); })
   .catch(() => { grid.innerHTML = ""; emptyState.hidden = false; emptyState.textContent = "Couldn't load the game library. Check that games.json is available."; });

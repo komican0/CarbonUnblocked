@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=1920x1080-2">
+  <link rel="stylesheet" href="styles.css?v=popular-tab-3">
 </head>
 <body>
   <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
@@ -29,6 +29,10 @@
 
     <section id="library" class="library" aria-labelledby="library-title">
       <div class="section-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> THE GAME ROOM</div><h2 id="library-title">Pick your <span>player.</span></h2></div><a class="browse-link" href="#game-grid">BROWSE ALL <span>↘</span></a></div>
+      <div class="game-filters" role="tablist" aria-label="Game collection">
+        <button id="all-games-filter" class="collection-tab active" type="button" role="tab" aria-selected="true">All games <span id="all-game-count">0</span></button>
+        <button id="popular-filter" class="collection-tab" type="button" role="tab" aria-selected="false">Popular <span id="popular-game-count">0</span></button>
+      </div>
       <div id="game-grid" class="game-grid" aria-live="polite"></div>
       <p id="empty-state" class="empty-state" hidden>No games found. Try another search.</p>
     </section>
@@ -45,6 +49,6 @@
     <p id="secret-panel-status" class="secret-panel-status" role="status" aria-live="polite">SCANNING FOR OPEN TABS…</p>
   </dialog>
   <script src="realtime-config.js?v=20261126-2"></script>
-  <script src="app.js?v=20261126-4"></script>
+  <script src="app.js?v=popular-tab-3"></script>
 </body>
 </html>
