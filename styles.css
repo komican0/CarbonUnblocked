@@ -24,3 +24,23 @@
 .blank-button:hover{border-color:var(--lime);background:#1a2030}
 #tab-cloak-button[aria-pressed="true"]{color:#fff;background:#1a2030;border-color:var(--pink);box-shadow:0 0 12px rgba(255,101,185,.25)}
 @media(max-width:520px){.topbar-right{gap:5px}.blank-button{font-size:7px;letter-spacing:0;padding:6px 5px}}
+
+/* Motion polish */
+@keyframes carbon-rise-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes carbon-float{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-9px) rotate(-2deg)}}
+@keyframes carbon-orbit{to{transform:rotate(360deg)}}
+@keyframes carbon-glow{0%,100%{opacity:.7}50%{opacity:1}}
+.hero-copy{animation:carbon-rise-in .65s cubic-bezier(.2,.7,.2,1) both}
+.hero-art{animation:carbon-rise-in .8s .12s cubic-bezier(.2,.7,.2,1) both}
+.arcade-machine{animation:carbon-float 5s ease-in-out infinite}
+.orbit-outer{animation:carbon-orbit 32s linear infinite}
+.orbit-inner{animation:carbon-orbit 23s linear infinite reverse}
+.screen-glow{animation:carbon-glow 2.8s ease-in-out infinite}
+.game-card{animation:carbon-rise-in .45s both;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+.game-card:nth-child(3n+2){animation-delay:.05s}.game-card:nth-child(3n){animation-delay:.1s}
+.game-card:hover{transform:translateY(-5px);box-shadow:0 12px 30px rgba(0,0,0,.28)}
+.blank-button{transition:transform .16s ease,border-color .16s ease,background-color .16s ease,box-shadow .16s ease}
+.blank-button:active{transform:scale(.96)}
+.self-destruct-button{color:#ff8db8;border-color:#5a2942}
+.self-destruct-button:hover{color:#fff;border-color:var(--pink);background:#321728;box-shadow:0 0 14px rgba(255,101,185,.2)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
