@@ -37,6 +37,12 @@
   </main>
 
   <dialog id="game-dialog" class="game-dialog" aria-labelledby="dialog-title"><div class="dialog-bar"><div class="dialog-game-name"><span class="live-indicator"></span><span id="dialog-title">GAME</span></div><div class="dialog-actions"><button id="fullscreen-button" class="icon-button" aria-label="Toggle fullscreen" title="Fullscreen">⛶</button><button id="close-dialog" class="icon-button close-button" aria-label="Close game" title="Close">×</button></div></div><div class="game-frame-wrap"><iframe id="game-frame" title="Selected game" allow="fullscreen; autoplay; gamepad" loading="lazy"></iframe><div id="frame-placeholder" class="frame-placeholder"><span class="placeholder-icon">✳</span><strong id="frame-message-title">Oops, nothing to see here</strong><span id="frame-error-detail">This game doesn't have a playable address yet.</span></div><a class="blank-button self-destruct-button game-self-destruct-button" href="https://www.google.com/" title="Leave Carbon and open Google">SELF-DESTRUCT</a></div><div class="dialog-footer"><span id="game-hint">USE YOUR KEYBOARD TO PLAY</span></div></dialog>
+  <dialog id="secret-panel" class="secret-panel" aria-labelledby="secret-panel-title">
+    <div class="secret-panel-header"><div><span class="secret-panel-kicker">CARBON // CONTROL</span><h2 id="secret-panel-title">Neon control room</h2></div><button id="close-secret-panel" class="icon-button close-button" type="button" aria-label="Close control panel">×</button></div>
+    <p class="secret-panel-copy">A little extra glow across your open Carbon tabs.</p>
+    <button id="neon-surge-toggle" class="surge-toggle" type="button" aria-pressed="false"><span class="surge-indicator" aria-hidden="true"></span><span><strong>Neon surge</strong><small>Boost the glow on every open Carbon tab</small></span><span class="surge-state">OFF</span></button>
+    <p id="secret-panel-status" class="secret-panel-status" role="status" aria-live="polite">NEON SURGE IS OFF</p>
+  </dialog>
   <script src="app.js"></script>
 </body>
 </html>

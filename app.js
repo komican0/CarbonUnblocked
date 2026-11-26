@@ -9,8 +9,71 @@ const tabCloakButton = document.querySelector("#tab-cloak-button");
 const siteFavicon = document.querySelector("#site-favicon");
 const carbonTitle = document.title;
 const carbonFavicon = siteFavicon.href;
+const secretPanel = document.querySelector("#secret-panel");
+const neonSurgeToggle = document.querySelector("#neon-surge-toggle");
+const secretPanelStatus = document.querySelector("#secret-panel-status");
+const surgeStorageKey = "carbon-neon-surge";
+let surgeChannel = null;
 let games = [];
 let frameLoadTimeout = null;
+
+const encodedTrigger = "PJ4HQ6D2PB5HQ===";
+function decodeBase32(encoded) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let buffer = 0;
+  let bits = 0;
+  let decoded = "";
+  for (const character of encoded.replace(/=+$/, "")) {
+    const value = alphabet.indexOf(character);
+    if (value < 0) throw new Error("Invalid Base32 trigger.");
+    buffer = (buffer << 5) | value;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      decoded += String.fromCharCode((buffer >> bits) & 255);
+      buffer &= (1 << bits) - 1;
+    }
+  }
+  return decoded;
+}
+const secretTrigger = decodeBase32(encodedTrigger);
+let typedKeys = "";
+
+function applyNeonSurge(enabled, broadcast = false) {
+  document.documentElement.classList.toggle("carbon-surge", enabled);
+  neonSurgeToggle.setAttribute("aria-pressed", String(enabled));
+  neonSurgeToggle.querySelector(".surge-state").textContent = enabled ? "ON" : "OFF";
+  secretPanelStatus.textContent = enabled ? "NEON SURGE IS ON · SYNCED TO OPEN TABS" : "NEON SURGE IS OFF";
+  if (!broadcast) return;
+  try { localStorage.setItem(surgeStorageKey, String(enabled)); } catch { /* BroadcastChannel still syncs open tabs. */ }
+  surgeChannel?.postMessage({ type: "neon-surge", enabled });
+}
+
+try {
+  surgeChannel = new BroadcastChannel("carbon-open-tabs");
+  surgeChannel.addEventListener("message", event => {
+    if (event.data?.type === "neon-surge" && typeof event.data.enabled === "boolean") applyNeonSurge(event.data.enabled);
+  });
+} catch { /* Storage events provide a fallback where BroadcastChannel is unavailable. */ }
+window.addEventListener("storage", event => {
+  if (event.key === surgeStorageKey) applyNeonSurge(event.newValue === "true");
+});
+try { applyNeonSurge(localStorage.getItem(surgeStorageKey) === "true"); } catch { applyNeonSurge(false); }
+
+neonSurgeToggle.addEventListener("click", () => {
+  applyNeonSurge(neonSurgeToggle.getAttribute("aria-pressed") !== "true", true);
+});
+document.querySelector("#close-secret-panel").addEventListener("click", () => secretPanel.close());
+document.addEventListener("keydown", event => {
+  if (event.ctrlKey || event.metaKey || event.altKey || dialog.open || secretPanel.open) { typedKeys = ""; return; }
+  const target = event.target;
+  if (!(target instanceof Element) || target.isContentEditable || target.matches("input, textarea, select")) { typedKeys = ""; return; }
+  if (event.key.length !== 1) return;
+  typedKeys = (typedKeys + event.key.toLowerCase()).slice(-secretTrigger.length);
+  if (typedKeys !== secretTrigger) return;
+  typedKeys = "";
+  secretPanel.showModal();
+});
 
 function renderGames() {
   const query = search.value.trim().toLowerCase();

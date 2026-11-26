@@ -47,4 +47,23 @@
 .game-frame-wrap:fullscreen .game-self-destruct-button{right:calc(16px / var(--fullscreen-scale,1));bottom:calc(18px / var(--fullscreen-scale,1))}
 .frame-placeholder strong{font-size:clamp(18px,3vw,28px)}
 .frame-placeholder #frame-error-detail{font-size:12px;color:#a0a4b2;max-width:80%;text-align:center}
+.secret-panel{width:min(440px,calc(100vw - 28px));padding:24px;border:1px solid rgba(215,255,95,.35);border-radius:10px;background:linear-gradient(145deg,#171c2a,#0b0e16 70%);color:var(--text);box-shadow:0 0 45px rgba(215,255,95,.12),0 24px 90px rgba(0,0,0,.6)}
+.secret-panel::backdrop{background:rgba(2,4,9,.78);backdrop-filter:blur(8px)}
+.secret-panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.secret-panel-kicker{font:9px var(--mono);letter-spacing:1.6px;color:var(--lime)}
+.secret-panel-header h2{margin:8px 0 0;font-size:26px;letter-spacing:-.8px}
+.secret-panel-copy{margin:14px 0 20px;color:var(--muted);font-size:13px}
+.surge-toggle{width:100%;display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:7px;background:#111522;color:var(--text);text-align:left;cursor:pointer}
+.surge-toggle:hover{border-color:var(--lime)}
+.surge-toggle[aria-pressed="true"]{border-color:var(--lime);box-shadow:0 0 22px rgba(215,255,95,.14)}
+.surge-indicator{width:12px;height:12px;flex:none;border-radius:50%;background:#555b69;box-shadow:0 0 0 4px rgba(255,255,255,.04)}
+.surge-toggle[aria-pressed="true"] .surge-indicator{background:var(--lime);box-shadow:0 0 14px var(--lime),0 0 0 4px rgba(215,255,95,.12)}
+.surge-toggle strong,.surge-toggle small{display:block}.surge-toggle strong{font-size:13px}.surge-toggle small{margin-top:4px;color:var(--muted);font:9px var(--mono)}
+.surge-state{margin-left:auto;font:9px var(--mono);color:var(--muted)}
+.surge-toggle[aria-pressed="true"] .surge-state{color:var(--lime)}
+.secret-panel-status{margin:16px 0 0;color:var(--lime);font:8px var(--mono);letter-spacing:.8px}
+.carbon-surge .brand-mark{box-shadow:0 0 22px rgba(215,255,95,.6)}
+.carbon-surge .game-card{border-color:rgba(215,255,95,.55);box-shadow:0 0 15px rgba(215,255,95,.13)}
+.carbon-surge .game-cover{filter:saturate(1.45)}
+@media(max-width:520px){.secret-panel{padding:19px}.secret-panel-header h2{font-size:23px}.surge-toggle{padding:12px}.surge-toggle small{font-size:8px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
